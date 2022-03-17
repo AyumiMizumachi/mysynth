@@ -194,6 +194,8 @@
                     var s = this.answers[index];
                     var chord = new Chord(s);
                     this.synth.triggerAttackRelease(chord.components(3), '2n');
+                    Tone.Transport.start();
+                    Tone.start();
                 },
                 check_ans_icon: function(n){
                     // console.log(`${n-1} = ${this.answers_icon[n-1]}`);
@@ -226,6 +228,9 @@
                     var chord = new Chord(s);
                     this.answers.push(s);
                     this.synth.triggerAttackRelease(chord.components(3), '2n');
+                    Tone.Transport.start();
+                    Tone.start();
+
                     this.$set(this.questions_icon, args.counter, true);
                     /*
                     setTimeout(), $set( this.questions_icon, n, true )
@@ -295,11 +300,17 @@
                         this.btn_list = this.lesson_selected.btn_list;
                         console.log(`lesson # = ${this.lesson_selected.l} < value ${this.lesson_selected.v}`);
                     }
+                    var chord = new Chord("C");
+                    this.synth.triggerAttackRelease(chord.components(3), '32n');
+                    Tone.Transport.start();
+                    Tone.start();
                 },
                 hint_note: function(arg){
                     console.log(`${arg} button`);
                     var chord = new Chord(arg);
                     this.synth.triggerAttackRelease(chord.components(3), '2n');
+                    Tone.Transport.start();
+                    Tone.start();
                 }
             }
         });
