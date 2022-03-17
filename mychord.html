@@ -151,6 +151,70 @@
                             "Good luck"
                         ],
                         post_msg: []},
+                    { l:"1-4: C, F, G and Am", v:4, btn_list: ["", "C", "F", "G", "Am"],
+                        pre_msg: [
+                            "lesson 1-4: add Am into lesson 1-3.",
+                            "it is merged 1-2 & 1-3."
+                        ],
+                        post_msg: []},
+                    { l:"1-5: C, F, G, Am and Dm", v:5, btn_list: ["", "C", "F", "G", "Am", "Dm"],
+                        pre_msg: [
+                            "lesson 1-5: add Dm into lesson 1-4.",
+                            "Dm is similar to F. but it is minor."
+                        ],
+                        post_msg: []},
+                    { l:"1-6: C, F, G, Am, Dm and Em", v:6, btn_list: ["", "C", "F", "G", "Am", "Dm", "Em"],
+                        pre_msg: [
+                            "lesson 1-6: add Em into lesson 1-5.",
+                            "Em has intermediate propery with C and G"
+                        ],
+                        post_msg: []},
+                    { l:"1-7: C, Dm, Em, F, G, Am and Bm-5", v:7,
+                        btn_list: ["", "C", "Dm", "Em", "F", "G", "Am", "Bm-5"],
+                        pre_msg: [
+                            "lesson 1-7: these are diatonic chords",
+                            "Bm-5 is add into lesson 1-6",
+                            "I think Bm-5 is easy to distinguish."
+                        ],
+                        post_msg: []},
+                    { l:"2-1: transposed", v:8,
+                        btn_list: ["", "D", "Em", "F#m", "G", "A", "Bm", "C#m-5"],
+                        pre_msg: [
+                            "lesson 2-1: transpose into key=D from key=C",
+                            "If you have absolute pitch"
+                        ],
+                        post_msg: []},
+                    { l:"2-2: transposed", v:9,
+                        btn_list: ["", "Ab", "Bbm", "Cm", "Db", "Eb", "Fm", "Gm-5"],
+                        pre_msg: [
+                            "lesson 2-1: transpose into key=D from key=C",
+                            "If you have absolute pitch"
+                        ],
+                        post_msg: []},
+                    { l:"3-1: on Chord. C, G/D, F/C", v:10,
+                        btn_list: ["", "C", "G/D", "F/C" ],
+                        pre_msg: [
+                            "lesson 3-1: 3 chords with nearest notes"
+                        ],
+                        post_msg: []},
+                    { l:"4-1: on Chord. C, C/E, C/G", v:10,
+                        btn_list: ["", "C", "C/E", "C/G" ],
+                        pre_msg: [
+                            "lesson 4-1: root rotation"
+                        ],
+                        post_msg: []},
+                    { l:"5-1: Several quality: CM7, FM7, G7", v:12, 
+                        btn_list: ["", "CM7", "FM7", "G7"],
+                        pre_msg: [
+                            "lesson 5-1: maj7 and 7"
+                        ],
+                        post_msg: []},
+                    { l:"5-2: Several quality: CM7, Dm7, G7", v:13,
+                        btn_list: ["", "CM7", "Dm7", "G7"],
+                        pre_msg: [
+                            "lesson 5-2: m7"
+                        ],
+                        post_msg: []}
                 ],
                 questions_icon: [false, false, false, false, false],
                 answer_visible: false,
@@ -291,6 +355,7 @@
                     this.userName = "";
                 },
                 selectLevel: function(){
+                    this.answer_visible = false;
                     if( this.selected === null || this.lesson_selected.v === 0 ){
                         this.disable = true;
                     }else{
