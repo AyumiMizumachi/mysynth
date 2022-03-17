@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chords</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.38/Tone.js" integrity="sha512-06fghCFOHDF8cucqI4jKWIO0pCo+5F9upQbLxCEzAHruVuQ9rHQaKK4V9k0sZg6ghi0PqRTA81/jJDzFcKwBfw==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vue@2.6.14"></script>
+    <script src="./mychord.js"></script>
+    <!-- <script src="./quiz.js"></script> -->
+    <style>
+        #speech {
+            background: black ;
+            color: white;
+            border: 1px solid white;
+        }
+        #out-speech {
+            display: inline-block;
+            margin: 2px;
+            border: 1px solid black;
+        }
+        #overlay {
+            z-index: 1;
+            position: fixed;
+            top:0;
+            left:0;
+            width:100%;
+            height:100%;
+            background-color:rgba(0,0,0,0.5);
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        #content {
+            z-index: 2;
+            width: 50%;
+            padding: 1em;
+            background: #FFF;
+        }
+        p.inline {
+            display: inline;
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <select v-model="lesson_selected" v-on:change="selectLevel">
+            <option v-for="lsn in lesson_list" :key="lsn" v-bind:value="lsn">{{ lsn.l }}</option>
+        </select><br/>
+        <svg width="300px" height="200px">
+            <circle cx="100" cy="100" r="50" stroke="blue" fill="white" stroke-width="5"/>
+            <line x1="75" y1="75" x2="75" y2="100" stroke="blue" stroke-width="5">
+                <animate attributeName="y1" dur="3s" from="75" to="90" repeatCount="indefinite"/>
+            </line>
+            <line x1="125" y1="75" x2="125" y2="100" stroke="blue" stroke-width="5">
+                <animate attributeName="y1" dur="3s" from="75" to="90" repeatCount="indefinite"/>
+            </line>
+            <rect id="mouse" x="75" y="110" width="50" height="20" rx="0" ry="0" stroke="blue" stroke-width="5" fill="white">
+                <animate attributeName="height" dur="0.5s" from="0" to="20" repeatCount="indefinite"/>
+            </rect>
+            <polygon points='175,50 275,50 275,175 175,175 175,110 160,100 175,100' fill="white" stroke="blue" stroke-width="5"></polygon>
+            <text x="180" y="100" text-anchor="left"> {{ ch_msg }}</text>
+            <text x="180" y="110" text-anchor="left"> {{ userName }} </text>
+        </svg><br/>
+        <div id="out-speech">
+            <span id="speech"> {{ message }} </span><br/>
+        </div>
+        <div>
+            <button v-on:click="next">&#10148;</button>
+        </div>
+        <hr>
+
+        <button v-on:click="quiz_start" :disabled="disable">start</button>
+        <ul>
+            <li v-for="n of 5" :key="n">
+                {{ n }}
+                <span v-on:click="resound(n)" v-if="check_sound_icon(n)">&#x1f50a;</span>
+                <span v-else>&#x2754;</span> ANSWER :
+                <select class="candidate" v-model="ans_selected[n-1]" v-on:change="change_ans(n)">
+                    <option v-for="cand in btn_list" :key="cand" v-bind:value="cand" :disabled="disable" :selected="reset">{{cand}}</option>
+                </select>
+                <p class="inline" v-if="answer_visible">
+                    <!-- 😍 or 😑 -->
+                    <span v-if="check_ans_icon(n)">&#x1f60d;</span>
+                    <span v-else>&#x1f611;</span>
+                </p>
+            </li>
+        </ul>
+        <button v-on:click="check_answer" :disabled="disable">Check Your Answer</button>
+        <hr>
+        <div>
+            <span>hint</span>
+            <!-- <button v-for="btn in filterd_btn_list" v-on:click="hint_note(btn)">{{ btn }}</button> -->
+            <button v-for="btn in btn_list" v-on:click="hint_note(btn)">{{ btn }}</button>
+        </div>
+
+        <hr>
+        <button v-on:click="openModal">change user name</button><br/>
+
+        <!-- modal-->
+        <div id="overlay" v-show="showContent">
+            <div id="content">
+                <p>set user name.</p>
+                <input v-model="userName" placeholder="user name">
+                <button v-model="clearName">clear name</button>
+                <p style="font-size: 0.5em">it is saved in your local storage.</p>
+                <p><button v-on:click="closeModal">close</button></p>
+            </div>
+        </div>
+    </div>
+    <script>
+        var app = new Vue({
+            el: "#app",
+            data: {
+                reset: false,
+                msg_idx: 0,
+                message: "",
+                msg_ary: [],
+                level: 0,
+                synth: null,
+                ch_msg: "hello",
+                showContent: true,
+                userName: "",
+                lesson_selected: null, // this.lesson_list[0],
+                ans_selected: ["","","","",""], // null,
+                btn_list: [], 
+                disable: true,
+                lesson_list: [
+                    { l:"select level",  v:0, pre_msg: [], post_msg: [] },
+                    { l:"1-1: C, G",     v:1, btn_list: [ "", "C", "G" ],
+                        pre_msg: [
+                            "First of all, we start C and G",
+                            "You can listen chord with C and G button below"
+                        ], 
+                        post_msg:[]},
+                    { l:"1-2: C, G, Am", v:2, btn_list: [ "", "C", "G", "Am"],
+                        pre_msg: [
+                            "lesson 1-2: add Am into lesson 1-1.",
+                            "Am is similer to C, ",
+                            "But Am is minor chord"
+                        ],
+                        post_msg:[]},
+                    { l:"1-3: C, F, G",  v:3, btn_list: ["", "C", "F", "G"],
+                        pre_msg: [
+                            "lesson 1-3: add F into lesson 1-1.",
+                            "F is a little floating sence",
+                            "all chords are major key",
+                            "it is a little difficult.",
+                            "Good luck"
+                        ],
+                        post_msg: []},
+                ],
+                questions_icon: [false, false, false, false, false],
+                answer_visible: false,
+                answers_icon: [false, false, false, false, false],
+                answers: [],
+                user_answers: [],
+            },
+            mounted(){
+                // this.msg_ary = quiz[this.level].msg;
+                this.synth = new Tone.PolySynth().toDestination();
+                var n = localStorage.getItem('userName');
+                if(n === null || n === ""){
+                    this.showContent = true;
+                }else{
+                    this.showContent = false;
+                    this.userName = n;
+                }
+            },
+            /*
+            computed : {
+                filterd_btn_list: function(){
+                    return this.btn_list.filter( (e) => {
+                        return e !== "";
+                    }, this);
+                }
+            },
+            */
+            methods: {
+                skip_check: function(n){
+                    return n === "" ? true : false;
+                },
+                change_ans: function(n){
+                    console.log(`${n}/ ${this.ans_selected[n-1]} / change ans`);
+                    var index = n - 1;
+                    // this.user_answers[index] = this.ans_selected;
+                    this.$set(this.user_answers,index, this.ans_selected[index]);
+                },
+                resound: function(n){
+                    console.log(`resound ${n}`);
+                    var index = n - 1;
+                    var s = this.answers[index];
+                    var chord = new Chord(s);
+                    this.synth.triggerAttackRelease(chord.components(3), '2n');
+                },
+                check_ans_icon: function(n){
+                    // console.log(`${n-1} = ${this.answers_icon[n-1]}`);
+                    var index = n - 1;
+                    return this.answers_icon[index];
+                },
+                check_sound_icon: function(n){
+                    // console.log(`${n-1} = ${this.questions_icon[n-1]}`);
+                    var index = n - 1;
+                    return this.questions_icon[index];
+                },
+                next: function(){
+                    console.log(`${this.msg_ary} [ ${this.msg_idx} ]`);
+                    this.message = this.msg_ary[this.msg_idx];
+                    console.log(`${this.msg_idx}, ${this.msg_ary.length}`);
+                    if(this.msg_idx + 1 < this.msg_ary.length){
+                        this.msg_idx++;
+                    }
+                },
+                play_sound: function( args ){
+                    console.log(args);
+
+                    //this.btn_list = this.lesson_selected.btn_list;
+
+                    console.log(`${this.btn_list}, ${args.candidate}`);
+                    var i = Math.floor(Math.random() * (args.candidate.length - 1) + 1);
+                    // var i = Math.floor(Math.random() * (args.candidate.length));
+                    var s = args.candidate[i];
+                    console.log(`i = ${i} / s = ${s}`);
+                    var chord = new Chord(s);
+                    this.answers.push(s);
+                    this.synth.triggerAttackRelease(chord.components(3), '2n');
+                    this.$set(this.questions_icon, args.counter, true);
+                    /*
+                    setTimeout(), $set( this.questions_icon, n, true )
+                    */
+                    args.counter++;
+                    if(args.counter <= 4){
+                        console.log("set timer");
+                        setTimeout( this.play_sound, 1000, args );
+                    }else{
+                        this.disable = false;
+                    }
+                },
+                quiz_start: function(){
+                    /* clear questions icons */
+                    this.questions_icon = [false, false, false, false, false];
+                    this.answer_visible = false;
+                    this.disable = true;
+
+                    var elems = document.getElementsByClassName('candidate');
+                    console.log(elems);
+                    for(var x=0;x<5;x++){
+                        elems[x].selectedIndex = -1;
+                    }
+
+                    this.answers = [];
+                    this.user_answers = ["","","","",""];
+
+                    this.reset = true;
+                    // this.btn_list = [];
+                    this.btn_list = this.lesson_selected.btn_list;
+
+                    var candidate_chords = this.btn_list;
+                    var arg = { candidate: candidate_chords, counter: 0};
+                    setTimeout( this.play_sound, 1000, arg );
+                },
+                check_answer: function(){
+                    this.answer_visible = true;
+
+                    // dummy
+                    for(var i=0;i<5;i++){
+                        console.log(`ans: ${this.answers[i]}/ user: ${this.user_answers[i]}`);
+                        if(this.answers[i] === this.user_answers[i]){
+                            this.$set(this.answers_icon, i, true);
+                        }else{
+                            this.$set(this.answers_icon, i, false);
+                        }
+                    }
+                },
+                openModal: function(){
+                    this.showContent = true;
+                },
+                closeModal: function(){
+                    this.showContent = false;
+                    localStorage.setItem('userName', this.userName);
+                },
+                clearName: function(){
+                    localStorage.removeItem('userName');
+                    this.userName = "";
+                },
+                selectLevel: function(){
+                    if( this.selected === null || this.lesson_selected.v === 0 ){
+                        this.disable = true;
+                    }else{
+                        this.disable = false;
+                        this.msg_idx = 0;
+                        this.msg_ary = this.lesson_selected.pre_msg;
+                        this.btn_list = this.lesson_selected.btn_list;
+                        console.log(`lesson # = ${this.lesson_selected.l} < value ${this.lesson_selected.v}`);
+                    }
+                },
+                hint_note: function(arg){
+                    console.log(`${arg} button`);
+                    var chord = new Chord(arg);
+                    this.synth.triggerAttackRelease(chord.components(3), '2n');
+                }
+            }
+        });
+    </script>
+</body>
+</html>
