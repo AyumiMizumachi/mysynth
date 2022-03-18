@@ -73,13 +73,14 @@
         <hr>
 
         <button v-on:click="quiz_start" :disabled="disable">start</button>
+        <button v-on:click="clear_candidate">clear candidate</button>
         <ul>
             <li v-for="n of 5" :key="n">
                 {{ n }}
                 <span v-on:click="resound(n)" v-if="check_sound_icon(n)">&#x1f50a;</span>
                 <span v-else>&#x2754;</span> ANSWER :
                 <select class="candidate" v-model="ans_selected[n-1]" v-on:change="change_ans(n)">
-                    <option v-for="cand in btn_list" :key="cand" v-bind:value="cand" :disabled="disable" :selected="reset">{{cand}}</option>
+                    <option v-for="cand in btn_list" :key="cand" v-bind:value="cand" :disabled="disable">{{cand}}</option>
                 </select>
                 <p class="inline" v-if="answer_visible">
                     <!-- 😍 or 😑 -->
@@ -114,7 +115,6 @@
         var app = new Vue({
             el: "#app",
             data: {
-                reset: false,
                 msg_idx: 0,
                 message: "",
                 msg_ary: [],
@@ -221,6 +221,7 @@
                 answers_icon: [false, false, false, false, false],
                 answers: [],
                 user_answers: [],
+                objs: [],
             },
             mounted(){
                 // this.msg_ary = quiz[this.level].msg;
@@ -245,6 +246,17 @@
             methods: {
                 skip_check: function(n){
                     return n === "" ? true : false;
+                },
+                clear_candidate: function(){
+                    this.objs = document.getElementsByClassName('candidate');
+                    var n = 0;
+                    Array.prototype.forEach.call( this.objs, (obj) => {
+                        console.log(obj);
+                        obj.selectedIndex = -1;
+                        obj.options[0].selected = true;
+                        this.ans_selected[n] = "";
+                        n++;
+                    });
                 },
                 change_ans: function(n){
                     console.log(`${n}/ ${this.ans_selected[n-1]} / change ans`);
@@ -312,6 +324,7 @@
                     this.questions_icon = [false, false, false, false, false];
                     this.answer_visible = false;
                     this.disable = true;
+                    this.clear_candidate();
 
                     var elems = document.getElementsByClassName('candidate');
                     console.log(elems);
